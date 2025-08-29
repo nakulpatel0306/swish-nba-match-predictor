@@ -1,0 +1,14 @@
+# Core
+numpy
+pandas
+scikit-learn
+
+# Viz
+matplotlib
+
+# Notebooks
+jupyter
+
+# (Optional) scraping libs if used in getData
+requests
+beautifulsoup4
