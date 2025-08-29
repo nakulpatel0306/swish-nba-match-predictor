@@ -22,9 +22,6 @@ Predict winners of NBA games using Python and ML. This repo includes both **Jupy
 └── main.py                    # Orchestrates end-to-end run
 ```
 
-> Original project note: Uses box score data obtained through web scraping.
-> (From the prior README)
-
 ## Getting Started
 
 ### 1) Create & activate a virtual environment
@@ -63,6 +60,4 @@ The Python scripts are auto-generated from the notebooks by concatenating code c
 - Large/secret data should go in `data/raw/` (ignored by git).
 - Keep `data/processed/nba_games.csv` small if you plan to store it in the repo, or remove it and document how to regenerate.
 - Consider pinning dependency versions for long-term reproducibility.
-
-## License
-MIT (or choose another license if you prefer).
+  
