@@ -1,8 +1,11 @@
-# NBA Basketball Match Predictor
+# 🏀 NBA Basketball Match Predictor
 
-Predict winners of NBA games using Python and ML. This repo includes both **Jupyter notebooks** for a step-by-step workflow and **Python scripts** for quick, reproducible runs.
+Predict winners of NBA games using **Python** and **Machine Learning**.  
+This repo includes both **Jupyter notebooks** for a step-by-step workflow and **Python scripts** for quick, reproducible runs.
 
-## Project Structure
+---
+
+## 📂 Project Structure
 ```
 .
 ├── notebooks/                 # Interactive, documented workflow
@@ -22,9 +25,11 @@ Predict winners of NBA games using Python and ML. This repo includes both **Jupy
 └── main.py                    # Orchestrates end-to-end run
 ```
 
-## Getting Started
+---
 
-### 1) Create & activate a virtual environment
+## 🚀 Getting Started
+
+### 1️⃣ Create & activate a virtual environment
 ```bash
 python -m venv .venv
 # Windows: .venv\Scripts\activate
@@ -32,32 +37,36 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 2) Install dependencies
+### 2️⃣ Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3A) Run the **end-to-end** pipeline (scripts)
+### 3️⃣ Run or Explore
+- **Run the end-to-end pipeline (scripts):**
 ```bash
 python main.py
 ```
 
-### 3B) Explore the **notebooks**
+- **Explore the notebooks:**
 ```bash
-# Launch Jupyter
 jupyter notebook
 # Then open files in notebooks/ and run cells in order.
 ```
 
-## Reproducible Workflow
-- **Data ingestion**: `src/get_data.py` (from `notebooks/getData.ipynb`)
-- **Preprocessing**: `src/parse_data.py` (from `notebooks/parse_data.ipynb`)
-- **Modeling**: `src/predict.py` (from `notebooks/predict.ipynb`)
+---
 
-The Python scripts are auto-generated from the notebooks by concatenating code cells in order. You can refine them into functions/classes as you productionize.
+## 🔄 Reproducible Workflow
+- 📥 **Data ingestion**: `src/get_data.py` (from `notebooks/getData.ipynb`)
+- 🧹 **Preprocessing**: `src/parse_data.py` (from `notebooks/parse_data.ipynb`)
+- 🤖 **Modeling**: `src/predict.py` (from `notebooks/predict.ipynb`)
 
-## Notes
-- Large/secret data should go in `data/raw/` (ignored by git).
-- Keep `data/processed/nba_games.csv` small if you plan to store it in the repo, or remove it and document how to regenerate.
-- Consider pinning dependency versions for long-term reproducibility.
-  
+The Python scripts are auto-generated from the notebooks by concatenating code cells in order.  
+You can refine them into functions/classes as you productionize.
+
+---
+
+## 📝 Notes
+- 📂 Large/secret data should go in `data/raw/` (ignored by git).  
+- 💾 Keep `data/processed/nba_games.csv` small if you plan to store it in the repo, or remove it and document how to regenerate.  
+- 📌 Consider pinning dependency versions for long-term reproducibility.  
