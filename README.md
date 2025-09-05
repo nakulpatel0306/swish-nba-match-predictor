@@ -1,6 +1,7 @@
 # 🏀 NBA Basketball Match Predictor
 
 Predict winners of NBA games using **Python** and **Machine Learning**.  
+
 This repo includes both **Jupyter notebooks** for a step-by-step workflow and **Python scripts** for quick, reproducible runs.
 
 ---
