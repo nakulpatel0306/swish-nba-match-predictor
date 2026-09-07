@@ -1,113 +1,141 @@
-# Auto-generated from notebook: parse_data.ipynb
+"""Parse scraped box score HTML into one structured row per team per game.
 
-# ---- Cell ----
+Each box score yields two rows -- one for each team -- combining basic and
+advanced stats, as both team totals and per-game player maxima. The opponent's
+stats are joined onto each row as ``_opp`` columns, so a single row already
+describes both sides of the game it came from.
+"""
+
+from __future__ import annotations
+
+import argparse
 import os
+from pathlib import Path
+
 import pandas as pd
 from bs4 import BeautifulSoup
 
-# ---- Cell ----
-SCORE_DIR = "data/scores"
+from .config import GAMES_CSV, SCORES_DIR
 
-# ---- Cell ----
-box_scores = os.listdir(SCORE_DIR)
+# Columns kept from every box score, fixed by the first game parsed so every row
+# lines up. Plus/minus columns are dropped: they are empty for most seasons.
+DROPPED_STAT_PREFIXES = ("bpm",)
 
-# ---- Cell ----
-len(box_scores)
 
-# ---- Cell ----
-box_scores = [os.path.join(SCORE_DIR, f) for f in box_scores if f.endswith("html")]
-
-# ---- Cell ----
-box_scores
-
-# ---- Cell ----
-def parse_html(box_score):
-    with open(box_score) as f:
-        html=f.read()
-    soup = BeautifulSoup(html)
-    [s.decompose() for s in soup.select("tr.over_header")]
-    [s.decompose() for s in soup.select("tr.thead")]
+def parse_html(box_score: Path) -> BeautifulSoup:
+    """Read one box score and strip the header rows that break ``read_html``."""
+    soup = BeautifulSoup(Path(box_score).read_text(), "html.parser")
+    for tag in soup.select("tr.over_header"):
+        tag.decompose()
+    for tag in soup.select("tr.thead"):
+        tag.decompose()
     return soup
-    
 
-# ---- Cell ----
-def read_line_score(soup):
+
+def read_line_score(soup: BeautifulSoup) -> pd.DataFrame:
+    """Extract the two team codes and their final scores."""
     line_score = pd.read_html(str(soup), attrs={"id": "line_score"})[0]
-    cols =list(line_score.columns)
-    cols[0] = "Team"
-    cols[-1] = "Total"
+    cols = list(line_score.columns)
+    cols[0], cols[-1] = "Team", "Total"
     line_score.columns = cols
+    return line_score[["Team", "Total"]]
 
-    line_score = line_score[["Team", "Total"]]
-    return line_score
 
-# ---- Cell ----
-def read_stats(soup,team,stat):
-    df = pd.read_html(str(soup), attrs={"id":  f"box-{team}-game-{stat}"}, index_col=0)[0]
-    df= df.apply(pd.to_numeric, errors="coerce")
-    return df
+def read_stats(soup: BeautifulSoup, team: str, stat: str) -> pd.DataFrame:
+    """Read one team's ``basic`` or ``advanced`` table as numbers."""
+    df = pd.read_html(
+        str(soup), attrs={"id": f"box-{team}-game-{stat}"}, index_col=0
+    )[0]
+    return df.apply(pd.to_numeric, errors="coerce")
 
-# ---- Cell ----
-def read_season_info(soup):
+
+def read_season_info(soup: BeautifulSoup) -> str:
+    """Pull the season the game belongs to out of the page's bottom nav."""
     nav = soup.select("#bottom_nav_container")[0]
     hrefs = [a["href"] for a in nav.find_all("a")]
-    season = os.path.basename(hrefs[1]).split("_")[0]
-    return season
+    return os.path.basename(hrefs[1]).split("_")[0]
 
-# ---- Cell ----
-base_cols = None
-games=[]
 
-for box_score in box_scores:
+def team_summary(soup: BeautifulSoup, team: str, base_cols: list[str] | None):
+    """Build one team's stat row: totals plus per-player maxima, basic + advanced."""
+    basic = read_stats(soup, team, "basic")
+    advanced = read_stats(soup, team, "advanced")
+
+    totals = pd.concat([basic.iloc[-1, :], advanced.iloc[-1, :]])
+    totals.index = totals.index.str.lower()
+
+    maxes = pd.concat([basic.iloc[:-1, :].max(), advanced.iloc[:-1, :].max()])
+    maxes.index = maxes.index.str.lower() + "_max"
+
+    summary = pd.concat([totals, maxes])
+
+    if base_cols is None:
+        base_cols = [
+            c
+            for c in summary.index.drop_duplicates(keep="first")
+            if not c.startswith(DROPPED_STAT_PREFIXES)
+        ]
+    return summary[base_cols], base_cols
+
+
+def parse_game(box_score: Path, base_cols: list[str] | None):
+    """Turn one box score file into a two-row frame (one row per team)."""
     soup = parse_html(box_score)
     line_score = read_line_score(soup)
     teams = list(line_score["Team"])
-    
+
     summaries = []
     for team in teams:
-        basic = read_stats(soup,team,"basic")
-        advanced = read_stats(soup,team,"advanced")
-
-        totals = pd.concat([basic.iloc[-1,:],advanced.iloc[-1,:]])
-        totals.index = totals.index.str.lower()
-        
-        maxes = pd.concat([basic.iloc[:-1,:].max(), advanced.iloc[:-1,:].max()])
-        maxes.index = maxes.index.str.lower() + "_max"
-    
-        summary = pd.concat([totals,maxes])
-    
-        if base_cols is None:
-            base_cols = list(summary.index.drop_duplicates(keep="first"))
-            base_cols = [b for b in base_cols if "bpm" not in b]
-    
-        summary = summary[base_cols]
-    
+        summary, base_cols = team_summary(soup, team, base_cols)
         summaries.append(summary)
+
     summary = pd.concat(summaries, axis=1).T
-    
-    game = pd.concat([summary,line_score], axis=1)
-    game["Home"] = [0,1]
+    game = pd.concat([summary, line_score], axis=1)
+    game["Home"] = [0, 1]
+
+    # Flip the two rows and re-attach them so each team carries its opponent's line.
     game_opp = game.iloc[::-1].reset_index()
-    game_opp.columns += "_opp"
-    
-    full_game = pd.concat([game,game_opp],axis=1)
-    
+    game_opp.columns = [f"{c}_opp" for c in game_opp.columns]
+
+    full_game = pd.concat([game, game_opp], axis=1)
     full_game["season"] = read_season_info(soup)
-    
-    full_game["date"] = os.path.basename(box_score)[:8]
-    full_game["date"] = pd.to_datetime(full_game["date"], format="%Y%m%d")
-    
+    full_game["date"] = pd.to_datetime(
+        Path(box_score).name[:8], format="%Y%m%d"
+    )
     full_game["won"] = full_game["Total"] > full_game["Total_opp"]
-    games.append(full_game)
+    return full_game, base_cols
 
-    if len(games) % 100 ==0:
-        print(f"{len(games)} / {len(box_scores)}")
 
-# ---- Cell ----
-games_df =pd.concat(games, ignore_index=True)
+def parse_all(scores_dir: Path = SCORES_DIR) -> pd.DataFrame:
+    """Parse every cached box score into a single team-game frame."""
+    box_scores = sorted(Path(scores_dir).glob("*.html"))
+    if not box_scores:
+        raise FileNotFoundError(
+            f"No box scores in {scores_dir}. Run src/get_data.py first."
+        )
 
-# ---- Cell ----
-games_df
+    base_cols = None
+    games = []
+    for i, box_score in enumerate(box_scores, start=1):
+        full_game, base_cols = parse_game(box_score, base_cols)
+        games.append(full_game)
+        if i % 100 == 0:
+            print(f"{i} / {len(box_scores)}")
 
-# ---- Cell ----
-games_df.to_csv("nba_games.csv")
+    return pd.concat(games, ignore_index=True)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--scores-dir", type=Path, default=SCORES_DIR)
+    parser.add_argument("--out", type=Path, default=GAMES_CSV)
+    args = parser.parse_args()
+
+    games = parse_all(args.scores_dir)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    games.to_csv(args.out)
+    print(f"Wrote {len(games):,} team-game rows to {args.out}")
+
+
+if __name__ == "__main__":
+    main()

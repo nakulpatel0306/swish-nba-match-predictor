@@ -1,0 +1,16 @@
+# Scraped HTML — regenerate with src/get_data.py
+data/raw/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Tooling
+.pytest_cache/
+.DS_Store
