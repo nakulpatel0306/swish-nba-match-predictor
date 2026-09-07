@@ -1,0 +1,8 @@
+[flake8]
+max-line-length = 100
+exclude = .git,__pycache__,.venv,build,dist,notebooks
+
+per-file-ignores =
+    # report.py holds a markdown template: wrapping its lines would insert line
+    # breaks into the generated document, so the limit does not apply there.
+    src/report.py:E501

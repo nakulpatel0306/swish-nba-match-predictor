@@ -1,2 +1,3 @@
-# Test dependencies, on top of requirements.txt
+# Test and lint dependencies, on top of requirements.txt
 pytest
+flake8

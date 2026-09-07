@@ -32,6 +32,7 @@ from .config import (
     SELECTED_FEATURES_JSON,
     TIER_EDGES,
 )
+from .evaluate import expected_calibration_error, season_breakdown
 from .features import (
     add_next_game_context,
     add_target,
@@ -395,6 +396,11 @@ def run(refresh_features: bool = False, skip_baselines: bool = False) -> dict:
         "unpaired_rows": unpaired,
         "home_court": home_court_baseline(raw_preds),
         "tiers": confidence_tiers(reconciled),
+        "ece_pre": expected_calibration_error(raw_preds),
+        "ece_post": expected_calibration_error(reconciled),
+        "seasons": season_breakdown(reconciled),
+        "raw_predictions": raw_preds,
+        "reconciled": reconciled,
     }
 
     print()
@@ -426,6 +432,10 @@ def run(refresh_features: bool = False, skip_baselines: bool = False) -> dict:
         f"  AUC {post['auc']:.3f}  Brier {post['brier']:.3f}"
     )
     print(
+        f"  Expected calibration error      {results['ece_pre']:.3f} -> "
+        f"{results['ece_post']:.3f}"
+    )
+    print(
         f"  Contradictory games             "
         f"{_pct(results['contradiction_rate_before'])} -> "
         f"{_pct(results['contradiction_rate_after'])}"
@@ -434,6 +444,16 @@ def run(refresh_features: bool = False, skip_baselines: bool = False) -> dict:
     print("Confidence tiers (after reconciliation)")
     for _, row in results["tiers"].iterrows():
         print(f"  {row['tier']:<40} n={row['n']:>6,}   {_pct(row['accuracy'])}")
+    print()
+
+    print("Season by season (reconciled)")
+    print(f"  {'season':<8}{'n':>7}{'model':>9}{'home':>9}{'lift':>8}{'AUC':>8}")
+    for _, row in results["seasons"].iterrows():
+        print(
+            f"  {int(row['season']):<8}{int(row['n']):>7,}"
+            f"{_pct(row['accuracy']):>9}{_pct(row['home_court']):>9}"
+            f"{row['lift'] * 100:>+7.1f} {row['auc']:>7.3f}"
+        )
     print()
 
     if not skip_baselines:
@@ -455,6 +475,21 @@ def run(refresh_features: bool = False, skip_baselines: bool = False) -> dict:
             "  tree ensemble. Reported as measured, not tuned until it wins."
         )
     return results
+
+
+def jsonable(results: dict) -> dict:
+    """Drop the prediction frames and unwrap the tables, for a JSON dump."""
+    out = {}
+    for key, value in results.items():
+        if isinstance(value, pd.DataFrame):
+            if key in ("raw_predictions", "reconciled"):
+                continue
+            out[key] = value.astype(object).where(value.notna(), None).to_dict(
+                orient="records"
+            )
+        else:
+            out[key] = value
+    return out
 
 
 def main() -> None:
@@ -480,8 +515,7 @@ def main() -> None:
         refresh_features=args.refresh_features, skip_baselines=args.skip_baselines
     )
     if args.json:
-        results["tiers"] = results["tiers"].to_dict(orient="records")
-        args.json.write_text(json.dumps(results, indent=2) + "\n")
+        args.json.write_text(json.dumps(jsonable(results), indent=2) + "\n")
         print(f"Wrote {args.json}")
 
 
