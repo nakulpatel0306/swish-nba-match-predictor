@@ -13,8 +13,6 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, brier_score_loss, roc_auc_score
 
-from .config import TIER_EDGES
-
 
 def calibration_table(predictions: pd.DataFrame, n_bins: int = 10) -> pd.DataFrame:
     """Bucket predictions by predicted probability and compare to what happened.
@@ -74,17 +72,3 @@ def season_breakdown(predictions: pd.DataFrame) -> pd.DataFrame:
             row["brier"] = float(brier_score_loss(group["actual"], group["prob"]))
         rows.append(row)
     return pd.DataFrame(rows)
-
-
-def tier_edges_label(edges: tuple[float, float] = TIER_EDGES) -> list[str]:
-    """Short tier names, for plots and tables that cannot fit the definitions."""
-    return ["Toss-up", "Lean", "Confident"]
-
-
-def summarise(predictions: pd.DataFrame, n_bins: int = 10) -> dict:
-    """Everything in this module at once, for the report and the plots."""
-    return {
-        "calibration": calibration_table(predictions, n_bins=n_bins),
-        "ece": expected_calibration_error(predictions, n_bins=n_bins),
-        "seasons": season_breakdown(predictions),
-    }

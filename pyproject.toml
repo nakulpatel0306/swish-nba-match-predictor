@@ -1,6 +1,8 @@
-[build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+# Project metadata and tool configuration.
+#
+# Runtime dependencies deliberately live in requirements.txt, not here. Two
+# copies of a dependency list drift; requirements.txt is the one the README,
+# the CI workflow and a reader all install from, so it is the single source.
 
 [project]
 name = "swish"
@@ -9,22 +11,6 @@ description = "Walk-forward validated NBA next-game outcome predictor with calib
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-dependencies = [
-    "numpy",
-    "pandas",
-    "scikit-learn",
-    "xgboost",
-    "playwright",
-    "beautifulsoup4",
-    "lxml",
-    "matplotlib",
-]
-
-[project.optional-dependencies]
-dev = ["pytest", "flake8"]
-
-[tool.setuptools]
-packages = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -220,6 +220,6 @@ The last three are quality gates, not smoke tests: a change that wins accuracy b
 - [x] Output calibrated win probabilities instead of hard labels
 - [x] Reconcile the two per-game predictions into one
 - [x] Report calibration, confidence tiers and per-season robustness
-- [ ] **Benchmark against the betting market** — convert historical closing moneylines to vig-free implied probabilities, compare calibration against the market's, and compute flat-bet ROI restricted to the confident tier. The likely finding is that the model does *not* beat the closing line; that is the interesting result, and it is what turns this from a prediction exercise into a forecasting-versus-market evaluation.
+- [ ] Benchmark against the betting market — vig-free implied probabilities from historical closing moneylines, calibration against the market's, flat-bet ROI on the confident tier
 - [ ] Track injury and lineup availability
 - [ ] Serve predictions through a small API and dashboard

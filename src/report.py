@@ -12,10 +12,10 @@ from datetime import date
 
 import pandas as pd
 
-from .config import ROOT
+from .config import N_FEATURES, ROOT
 from .evaluate import calibration_table
 from .plots import generate_all
-from .predict import N_FEATURES, run
+from .predict import run
 
 RESULTS_MD = ROOT / "reports" / "RESULTS.md"
 

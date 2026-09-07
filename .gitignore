@@ -7,6 +7,8 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
+build/
+dist/
 
 # Notebooks
 .ipynb_checkpoints/
